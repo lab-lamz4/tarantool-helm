@@ -1,0 +1,38 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ template "tarantul.fullname" . }}
+  labels:
+    app: {{ template "tarantul.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  serviceName: {{ template "tarantul.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "tarantul.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+{{- with .Values.podLabels }}
+{{ toYaml . | indent 8 }}
+{{- end}}
+{{- with .Values.podAnnotations }}
+      annotations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+      containers:
+{{- range .Values.replicas }}
+      - name: {{ . }}
+        image: {{ $.Values.image.repository }}:{{ $.Values.image.tag }}
+        imagePullPolicy: {{ default "" $.Values.image.pullPolicy | quote }}
+        env:
+        - name: TARANTOOL_REPLICATION
+          value: {{ include "tarantul.repl" $.Values.replicas | quote}}
+        ports:
+        - containerPort: 3301
+{{- end}}

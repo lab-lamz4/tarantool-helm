@@ -1,0 +1,82 @@
+apiVersion: apps/v1beta1
+kind: {{ .Values.kind }}
+metadata:
+  name: {{ template "tarantool.fullname" . }}
+  labels:
+    app: {{ template "tarantool.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  {{- if eq .Values.kind "StatefulSet" }}
+  serviceName: {{ template "tarantool.fullname" . }}
+  {{- end }}
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "tarantool.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+{{- with .Values.podLabels }}
+{{ toYaml . | indent 8 }}
+{{- end}}
+{{- with .Values.podAnnotations }}
+      annotations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+      affinity:
+        podAntiAffinity:
+        {{- if eq .Values.AntiAffinity "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                app:  {{ template "tarantool.fullname" . }}
+                release: {{ .Release.Name | quote }}
+        {{- else if eq .Values.AntiAffinity "soft" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 5
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app:  {{ template "tarantool.fullname" . }}
+                  release: {{ .Release.Name | quote }}
+        {{- end }}
+      containers:
+      - name: {{ template "tarantool.fullname" . }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+        env:
+        - name: TARANTOOL_REPLICATION
+          value: {{ include "tarantool.repl" . | quote}}
+        ports:
+        - name: tarantool
+          containerPort: 3301
+        - name: tarantool-admin
+          containerPort: 3302
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+
+{{- with .Values.extraContainers }}
+{{ tpl . $ | indent 6 }}
+{{- end }}
+{{- with .Values.extraVolumes }}
+      volumes:
+{{ tpl . $ | indent 6 }}
+{{- end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | trim | indent 8}}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | trim | indent 8}}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | trim | indent 8}}
+{{- end }}

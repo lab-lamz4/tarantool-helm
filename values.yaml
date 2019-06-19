@@ -1,0 +1,48 @@
+# Default values for tarantool.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+pdbMinAvailable: 2
+
+## Select AntiAffinity as either hard or soft, default is hard
+AntiAffinity: "hard"
+## StatefulSet or Deployment
+kind: StatefulSet
+
+
+## Custom metadata labels to be applied to statefulset and pods
+# podLabels:
+#   foo: "bar"
+#   bar: "foo"
+
+# To be added to the server pod(s)
+podAnnotations: {}
+
+## Select AntiAffinity as either hard or soft, default is soft
+AntiAffinity: "soft"
+
+image: tarantool/tarantool:1.10.2
+imagePullPolicy: IfNotPresent
+
+resources:
+  requests:
+    memory: 64Mi
+    cpu: 50m
+
+nameOverride: ""
+fullnameOverride: ""
+
+extraContainers: |
+extraVolumes: |
+
+## Key:value pair for assigning pod to specific sets of nodes
+## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+nodeSelector: {}
+
+## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: {}
+
+## Advanced scheduling controls
+## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+affinity: {}
